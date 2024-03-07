@@ -1,0 +1,19 @@
+version: '2.4'
+services:
+  cepheid-api:
+    container_name: cepheid-api
+    extends:
+      file: docker-compose.common.yml
+      service: api
+    # networks:
+    #   - backend
+    ports:
+      - "8080:80"
+    # env_file:
+    #   - some/path
+    # volumes:
+    #   - some/path:other/path
+
+# networks:
+#   backend:
+#     external: true

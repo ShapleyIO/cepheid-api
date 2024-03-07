@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -euo pipefail
+
+oapi-codegen -old-config-style -generate chi-server,types,client,spec -package generated api/spec/main.yml > api/generated/api.go

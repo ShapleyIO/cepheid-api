@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: Cepheid API
+  description: |-
+    Base Cepheid API Definition
+  contact:
+    email: kevin@shapley.io
+  version: 0.0.1
+servers:
+  - url: https://cepheid.shapley.io
+tags:
+  - name: Feature Flags
+    description: Operations around managing Feature Flags
+paths:
+  /feature_flag/{id}:
+    get:
+      tags:
+        - Feature Flags
+      summary: Gets a Feature Flag By Id
+      description: Gets a Feature Flag By Id
+      operationId: getFeatureFlag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Found Feature Flag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+      security:
+        - OAuth2:
+          - featureflags:read
+
+components:
+  schemas:
+    FeatureFlag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        value:
+          type: boolean
+  
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://sso.shapley.io/oauth2/auth
+          tokenUrl: https://sso.shapley.io/oauth2/token
+          scopes:
+            featureflags:read: Ability to Read Feature Flags
+    APIKey:
+      type: apiKey
+      name: api_key
+      in: header
