@@ -10,3 +10,5 @@ services:
         - VERSION=${VERSION:-development}
     image: shapley/cepheid-api:${REVISION:-development}
     tty: true
+  redis:
+    image: redis:bookworm

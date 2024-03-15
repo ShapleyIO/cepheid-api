@@ -5,11 +5,11 @@ ENV GOFLAGS=-mod=vendor
 
 RUN mkdir ~/.ssh
 RUN ssh-keyscan github.com >> ~/.ssh/known_hosts \
-RUN git config --global url."git@github.com".insteadOf "https://github.com"
+    git config --global url."git@github.com".insteadOf "https://github.com"
 
 ENV PROJECT shapley-cepheid
 WORKDIR $GOPATH/src/github.com/ShapleyIO/$PROJECT
-RUN git config --global --add safe.directory $GOPATH/src/github.com/ShapleyIO/cepheid
+RUN git config --global --add safe.directory $GOPATH/src/github.com/ShapleyIO/$PROJECT
 
 FROM base as builder
 
@@ -41,7 +41,7 @@ FROM golang-builder as api-builder
 RUN --mount=type=cache,target=/root/.cache/go-build bin/build
 
 FROM alpine:3.18 as api
-COPY --from=api-builder /go/src/github.com/ShapleyIO/shapley-cepheid/dist/cepheid-api /cepheid-api
+COPY --from=api-builder /go/src/github.com/ShapleyIO/shapley-cepheid/dist/cepheid-api /usr/bin/cepheid-api
 ENV INTERFACE="[::]"
 EXPOSE 80
-ENTRYPOINT [ "/cepheid-api" ]
+ENTRYPOINT [ "cepheid-api" ]

@@ -1,19 +1,49 @@
 package main
 
 import (
-	"fmt"
-	"github.com/ShapleyIO/api/generated"
-	"github.com/ShapleyIO/api/handlers/flags"
+	"net/http"
+
+	api "github.com/ShapleyIO/cepheid/api/generated"
+	"github.com/ShapleyIO/cepheid/internal/config"
+	"github.com/ShapleyIO/cepheid/internal/connect"
+	"github.com/go-chi/chi/v5"
+	chi_middleware "github.com/oapi-codegen/nethttp-middleware"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
-type Handlers struct {
-	*flags.ServiceFeatureFlags
-}
-
-var _ generated.ServerInterface = (*Handlers)(nil)
-
 func main() {
-	handlers := new(Handlers)
+	// Replace with customized logger
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	handlers.ServiceFeatureFlags = flags.NewServiceFlags()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Panic().Err(err).Msg("failed to load configuration")
+	}
+
+	router := chi.NewRouter()
+
+	services, err := connect.CreateServices(cfg)
+	if err != nil {
+		log.Panic().Err(err).Msg("failed to create services")
+	}
+
+	swaggerApi, err := api.GetSwagger()
+	if err != nil {
+		log.Panic().Err(err).Msg("failed to get swagger for api")
+	}
+
+	swaggerEndpoints := router.Group(nil)
+	swaggerEndpoints.Use(chi_middleware.OapiRequestValidator(swaggerApi))
+
+	api.HandlerFromMux(services.Handlers(), swaggerEndpoints)
+
+	// router.NotFound()
+	// router.MethodNotAllowed()
+
+	log.Info().Int("port", 8080).Msg("starting server")
+	err = http.ListenAndServe(":8080", router)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to start http server")
+	}
 }

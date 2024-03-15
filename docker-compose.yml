@@ -13,6 +13,13 @@ services:
     #   - some/path
     # volumes:
     #   - some/path:other/path
+  redis:
+    container_name: redis
+    extends:
+      file: docker-compose.common.yml
+      service: redis
+    ports:
+      - "6379:6379"
 
 # networks:
 #   backend:
