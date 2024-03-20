@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	api "github.com/ShapleyIO/cepheid/api/generated"
+	apiV1 "github.com/ShapleyIO/cepheid/api/v1"
 	"github.com/ShapleyIO/cepheid/internal/config"
 	"github.com/ShapleyIO/cepheid/internal/connect"
 	"github.com/go-chi/chi/v5"
@@ -21,14 +21,14 @@ func main() {
 		log.Panic().Err(err).Msg("failed to load configuration")
 	}
 
-	router := chi.NewRouter()
+	baseRouter := chi.NewRouter()
 
 	services, err := connect.CreateServices(cfg)
 	if err != nil {
 		log.Panic().Err(err).Msg("failed to create services")
 	}
 
-	swaggerApi, err := api.GetSwagger()
+	swaggerApi, err := apiV1.GetSwagger()
 	if err != nil {
 		log.Panic().Err(err).Msg("failed to get swagger for api")
 	}
@@ -36,16 +36,16 @@ func main() {
 	validatorMiddlerware := chi_middleware.OapiRequestValidatorWithOptions(swaggerApi, &chi_middleware.Options{
 		SilenceServersWarning: true,
 	})
-	swaggerEndpoints := router.Group(nil)
-	swaggerEndpoints.Use(validatorMiddlerware)
 
-	api.HandlerFromMux(services.Handlers(), swaggerEndpoints)
+	baseRouter.Use(validatorMiddlerware)
+
+	apiV1.HandlerFromMux(services.Handlers(), baseRouter)
 
 	// router.NotFound()
 	// router.MethodNotAllowed()
 
 	log.Info().Int("port", 8080).Msg("starting server")
-	err = http.ListenAndServe(":8080", router)
+	err = http.ListenAndServe(":8080", baseRouter)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to start http server")
 	}

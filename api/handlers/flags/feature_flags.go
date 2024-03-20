@@ -27,7 +27,7 @@ type GetFeatureFlagResponse struct {
 	Flag string
 }
 
-func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Request, id string) {
+func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	resp, err := json.Marshal(&GetFeatureFlagResponse{
 		Flag: "Hello, World!",
 	})

@@ -15,7 +15,7 @@ tags:
   - name: Feature Flags
     description: Operations around managing Feature Flags
 paths:
-  /feature_flag/{id}:
+  /v1/feature_flag/{id}:
     get:
       tags:
         - Feature Flags
@@ -82,7 +82,7 @@ paths:
       # security:
       #   - OAuth2:
       #     - featureflags:read
-  /feature_flag:
+  /v1/feature_flag:
     post:
       tags:
         - Feature Flags
