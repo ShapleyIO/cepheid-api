@@ -14,11 +14,13 @@ import (
 )
 
 type ServiceFeatureFlags struct {
+	ctx         context.Context
 	redisClient *redis.Client
 }
 
 func NewServiceFlags() *ServiceFeatureFlags {
 	return &ServiceFeatureFlags{
+		ctx: context.Background(),
 		redisClient: redis.NewClient(&redis.Options{
 			Addr:     "redis:6379",
 			Password: "", // no password set
@@ -27,11 +29,11 @@ func NewServiceFlags() *ServiceFeatureFlags {
 	}
 }
 
-func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
-	resp, err := s.redisClient.Get(context.TODO(), id.String()).Result()
+func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Request, flagId openapi_types.UUID) {
+	resp, err := s.redisClient.Get(s.ctx, flagId.String()).Result()
 	if err != nil {
 		// Do something better about not finding the flag in redis
-		log.Error().Err(err).Str("flag_id", id.String()).Msg("flag_id not found")
+		log.Error().Err(err).Str("flag_id", flagId.String()).Msg("flag_id not found")
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -39,7 +41,7 @@ func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Requ
 	featureFlag := &apiV1.FeatureFlagWithId{}
 	err = json.Unmarshal([]byte(resp), featureFlag)
 	if err != nil {
-		log.Error().Err(err).Str("flag_id", id.String()).Msg("failed to unmarshal feature flag stored in redis")
+		log.Error().Err(err).Str("flag_id", flagId.String()).Msg("failed to unmarshal feature flag stored in redis")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -65,9 +67,9 @@ func (s *ServiceFeatureFlags) CreateFeatureFlag(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	id := uuid.New()
+	flagId := uuid.New()
 	featureFlagWithId := &apiV1.FeatureFlagWithId{
-		Id:    &id,
+		Id:    &flagId,
 		Name:  featureFlag.Name,
 		Value: featureFlag.Value,
 	}
@@ -79,18 +81,58 @@ func (s *ServiceFeatureFlags) CreateFeatureFlag(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = s.redisClient.Set(context.TODO(), id.String(), featureFlagAsBytes, 0).Err()
+	err = s.redisClient.Set(s.ctx, flagId.String(), featureFlagAsBytes, 0).Err()
 	if err != nil {
 		log.Error().Err(err).Str("function", "CreateFeatureFlag").Msg("failed to write feature flag to redis")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Write(featureFlagAsBytes)
 }
 
-func (s *ServiceFeatureFlags) DeleteFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (s *ServiceFeatureFlags) UpdateFeatureFlag(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to read request body")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	featureFlag := &apiV1.FeatureFlagWithId{}
+	err = json.Unmarshal(body, featureFlag)
+	if err != nil {
+		log.Error().Err(err).Str("function", "UpdateFeatureFlag").Msg("failed to unmarshal request body")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = s.redisClient.Get(s.ctx, featureFlag.Id.String()).Err()
+	if err != nil {
+		// Do something better about not finding the flag in redis
+		log.Error().Err(err).Str("flag_id", featureFlag.Id.String()).Msg("flag_id not found")
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err = s.redisClient.Set(s.ctx, featureFlag.Id.String(), body, 0).Err()
+	if err != nil {
+		log.Error().Err(err).Str("function", "UpdateFeatureFlag").Msg("failed to update feature flag to redis")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(body)
 }
 
-func (s *ServiceFeatureFlags) UpdateFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
-
+func (s *ServiceFeatureFlags) DeleteFeatureFlag(w http.ResponseWriter, r *http.Request, flagId openapi_types.UUID) {
+	err := s.redisClient.Del(s.ctx, flagId.String()).Err()
+	if err != nil {
+		log.Error().Err(err).Str("function", "DeleteFeatureFlag").Str("flag_id", flagId.String()).Msg("failed to delete feature flag")
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

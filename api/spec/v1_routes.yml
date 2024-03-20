@@ -15,7 +15,7 @@ tags:
   - name: Feature Flags
     description: Operations around managing Feature Flags
 paths:
-  /v1/feature_flag/{id}:
+  /v1/feature_flag/{flagId}:
     get:
       tags:
         - Feature Flags
@@ -23,39 +23,12 @@ paths:
       description: Gets a Feature Flag By Id
       operationId: getFeatureFlag
       parameters:
-        - name: id
+        - name: flagId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-      responses:
-        '200':
-          description: Found Feature Flag
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureFlagWithId'
-    put:
-      tags:
-        - Feature Flags
-      summary: Update a Feature Flag By Id
-      description: Update a Feature Flag By Id
-      operationId: updateFeatureFlag
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        description: "A feature flag configuration"
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeatureFlag'
       responses:
         '200':
           description: Found Feature Flag
@@ -70,7 +43,7 @@ paths:
       description: Deletes a Feature Flag By Id
       operationId: deleteFeatureFlag
       parameters:
-        - name: id
+        - name: flagId
           in: path
           required: true
           schema:
@@ -96,6 +69,26 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FeatureFlag'
+      responses:
+        '200':
+          description: Found Feature Flag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlagWithId'
+    put:
+      tags:
+        - Feature Flags
+      summary: Update a Feature Flag
+      description: Update a Feature Flag
+      operationId: updateFeatureFlag
+      requestBody:
+        description: "A feature flag configuration"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagWithId'
       responses:
         '200':
           description: Found Feature Flag

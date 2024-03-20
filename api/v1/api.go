@@ -39,7 +39,7 @@ type FeatureFlagWithId struct {
 type CreateFeatureFlagJSONRequestBody = FeatureFlag
 
 // UpdateFeatureFlagJSONRequestBody defines body for UpdateFeatureFlag for application/json ContentType.
-type UpdateFeatureFlagJSONRequestBody = FeatureFlag
+type UpdateFeatureFlagJSONRequestBody = FeatureFlagWithId
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -119,16 +119,16 @@ type ClientInterface interface {
 
 	CreateFeatureFlag(ctx context.Context, body CreateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateFeatureFlagWithBody request with any body
+	UpdateFeatureFlagWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateFeatureFlag(ctx context.Context, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteFeatureFlag request
-	DeleteFeatureFlag(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteFeatureFlag(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetFeatureFlag request
-	GetFeatureFlag(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UpdateFeatureFlagWithBody request with any body
-	UpdateFeatureFlagWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdateFeatureFlag(ctx context.Context, id openapi_types.UUID, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetFeatureFlag(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) CreateFeatureFlagWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -155,8 +155,8 @@ func (c *Client) CreateFeatureFlag(ctx context.Context, body CreateFeatureFlagJS
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteFeatureFlag(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteFeatureFlagRequest(c.Server, id)
+func (c *Client) UpdateFeatureFlagWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFeatureFlagRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +167,8 @@ func (c *Client) DeleteFeatureFlag(ctx context.Context, id openapi_types.UUID, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetFeatureFlag(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetFeatureFlagRequest(c.Server, id)
+func (c *Client) UpdateFeatureFlag(ctx context.Context, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFeatureFlagRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -179,8 +179,8 @@ func (c *Client) GetFeatureFlag(ctx context.Context, id openapi_types.UUID, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateFeatureFlagWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateFeatureFlagRequestWithBody(c.Server, id, contentType, body)
+func (c *Client) DeleteFeatureFlag(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteFeatureFlagRequest(c.Server, flagId)
 	if err != nil {
 		return nil, err
 	}
@@ -191,8 +191,8 @@ func (c *Client) UpdateFeatureFlagWithBody(ctx context.Context, id openapi_types
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateFeatureFlag(ctx context.Context, id openapi_types.UUID, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateFeatureFlagRequest(c.Server, id, body)
+func (c *Client) GetFeatureFlag(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFeatureFlagRequest(c.Server, flagId)
 	if err != nil {
 		return nil, err
 	}
@@ -243,13 +243,53 @@ func NewCreateFeatureFlagRequestWithBody(server string, contentType string, body
 	return req, nil
 }
 
+// NewUpdateFeatureFlagRequest calls the generic UpdateFeatureFlag builder with application/json body
+func NewUpdateFeatureFlagRequest(server string, body UpdateFeatureFlagJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateFeatureFlagRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateFeatureFlagRequestWithBody generates requests for UpdateFeatureFlag with any type of body
+func NewUpdateFeatureFlagRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/feature_flag")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewDeleteFeatureFlagRequest generates requests for DeleteFeatureFlag
-func NewDeleteFeatureFlagRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+func NewDeleteFeatureFlagRequest(server string, flagId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "flagId", runtime.ParamLocationPath, flagId)
 	if err != nil {
 		return nil, err
 	}
@@ -278,12 +318,12 @@ func NewDeleteFeatureFlagRequest(server string, id openapi_types.UUID) (*http.Re
 }
 
 // NewGetFeatureFlagRequest generates requests for GetFeatureFlag
-func NewGetFeatureFlagRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+func NewGetFeatureFlagRequest(server string, flagId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "flagId", runtime.ParamLocationPath, flagId)
 	if err != nil {
 		return nil, err
 	}
@@ -307,53 +347,6 @@ func NewGetFeatureFlagRequest(server string, id openapi_types.UUID) (*http.Reque
 	if err != nil {
 		return nil, err
 	}
-
-	return req, nil
-}
-
-// NewUpdateFeatureFlagRequest calls the generic UpdateFeatureFlag builder with application/json body
-func NewUpdateFeatureFlagRequest(server string, id openapi_types.UUID, body UpdateFeatureFlagJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdateFeatureFlagRequestWithBody(server, id, "application/json", bodyReader)
-}
-
-// NewUpdateFeatureFlagRequestWithBody generates requests for UpdateFeatureFlag with any type of body
-func NewUpdateFeatureFlagRequestWithBody(server string, id openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/v1/feature_flag/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -406,16 +399,16 @@ type ClientWithResponsesInterface interface {
 
 	CreateFeatureFlagWithResponse(ctx context.Context, body CreateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateFeatureFlagResponse, error)
 
+	// UpdateFeatureFlagWithBodyWithResponse request with any body
+	UpdateFeatureFlagWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error)
+
+	UpdateFeatureFlagWithResponse(ctx context.Context, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error)
+
 	// DeleteFeatureFlagWithResponse request
-	DeleteFeatureFlagWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteFeatureFlagResponse, error)
+	DeleteFeatureFlagWithResponse(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteFeatureFlagResponse, error)
 
 	// GetFeatureFlagWithResponse request
-	GetFeatureFlagWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetFeatureFlagResponse, error)
-
-	// UpdateFeatureFlagWithBodyWithResponse request with any body
-	UpdateFeatureFlagWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error)
-
-	UpdateFeatureFlagWithResponse(ctx context.Context, id openapi_types.UUID, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error)
+	GetFeatureFlagWithResponse(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetFeatureFlagResponse, error)
 }
 
 type CreateFeatureFlagResponse struct {
@@ -434,6 +427,28 @@ func (r CreateFeatureFlagResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreateFeatureFlagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateFeatureFlagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FeatureFlagWithId
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateFeatureFlagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateFeatureFlagResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -483,28 +498,6 @@ func (r GetFeatureFlagResponse) StatusCode() int {
 	return 0
 }
 
-type UpdateFeatureFlagResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *FeatureFlagWithId
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdateFeatureFlagResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdateFeatureFlagResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 // CreateFeatureFlagWithBodyWithResponse request with arbitrary body returning *CreateFeatureFlagResponse
 func (c *ClientWithResponses) CreateFeatureFlagWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateFeatureFlagResponse, error) {
 	rsp, err := c.CreateFeatureFlagWithBody(ctx, contentType, body, reqEditors...)
@@ -522,9 +515,26 @@ func (c *ClientWithResponses) CreateFeatureFlagWithResponse(ctx context.Context,
 	return ParseCreateFeatureFlagResponse(rsp)
 }
 
+// UpdateFeatureFlagWithBodyWithResponse request with arbitrary body returning *UpdateFeatureFlagResponse
+func (c *ClientWithResponses) UpdateFeatureFlagWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error) {
+	rsp, err := c.UpdateFeatureFlagWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateFeatureFlagResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateFeatureFlagWithResponse(ctx context.Context, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error) {
+	rsp, err := c.UpdateFeatureFlag(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateFeatureFlagResponse(rsp)
+}
+
 // DeleteFeatureFlagWithResponse request returning *DeleteFeatureFlagResponse
-func (c *ClientWithResponses) DeleteFeatureFlagWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteFeatureFlagResponse, error) {
-	rsp, err := c.DeleteFeatureFlag(ctx, id, reqEditors...)
+func (c *ClientWithResponses) DeleteFeatureFlagWithResponse(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteFeatureFlagResponse, error) {
+	rsp, err := c.DeleteFeatureFlag(ctx, flagId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -532,29 +542,12 @@ func (c *ClientWithResponses) DeleteFeatureFlagWithResponse(ctx context.Context,
 }
 
 // GetFeatureFlagWithResponse request returning *GetFeatureFlagResponse
-func (c *ClientWithResponses) GetFeatureFlagWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetFeatureFlagResponse, error) {
-	rsp, err := c.GetFeatureFlag(ctx, id, reqEditors...)
+func (c *ClientWithResponses) GetFeatureFlagWithResponse(ctx context.Context, flagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetFeatureFlagResponse, error) {
+	rsp, err := c.GetFeatureFlag(ctx, flagId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseGetFeatureFlagResponse(rsp)
-}
-
-// UpdateFeatureFlagWithBodyWithResponse request with arbitrary body returning *UpdateFeatureFlagResponse
-func (c *ClientWithResponses) UpdateFeatureFlagWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error) {
-	rsp, err := c.UpdateFeatureFlagWithBody(ctx, id, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateFeatureFlagResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdateFeatureFlagWithResponse(ctx context.Context, id openapi_types.UUID, body UpdateFeatureFlagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFeatureFlagResponse, error) {
-	rsp, err := c.UpdateFeatureFlag(ctx, id, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdateFeatureFlagResponse(rsp)
 }
 
 // ParseCreateFeatureFlagResponse parses an HTTP response from a CreateFeatureFlagWithResponse call
@@ -566,6 +559,32 @@ func ParseCreateFeatureFlagResponse(rsp *http.Response) (*CreateFeatureFlagRespo
 	}
 
 	response := &CreateFeatureFlagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FeatureFlagWithId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateFeatureFlagResponse parses an HTTP response from a UpdateFeatureFlagWithResponse call
+func ParseUpdateFeatureFlagResponse(rsp *http.Response) (*UpdateFeatureFlagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateFeatureFlagResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -625,46 +644,20 @@ func ParseGetFeatureFlagResponse(rsp *http.Response) (*GetFeatureFlagResponse, e
 	return response, nil
 }
 
-// ParseUpdateFeatureFlagResponse parses an HTTP response from a UpdateFeatureFlagWithResponse call
-func ParseUpdateFeatureFlagResponse(rsp *http.Response) (*UpdateFeatureFlagResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdateFeatureFlagResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest FeatureFlagWithId
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Create a Feature Flag
 	// (POST /v1/feature_flag)
 	CreateFeatureFlag(w http.ResponseWriter, r *http.Request)
+	// Update a Feature Flag
+	// (PUT /v1/feature_flag)
+	UpdateFeatureFlag(w http.ResponseWriter, r *http.Request)
 	// Deletes a Feature Flag By Id
-	// (DELETE /v1/feature_flag/{id})
-	DeleteFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// (DELETE /v1/feature_flag/{flagId})
+	DeleteFeatureFlag(w http.ResponseWriter, r *http.Request, flagId openapi_types.UUID)
 	// Gets a Feature Flag By Id
-	// (GET /v1/feature_flag/{id})
-	GetFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
-	// Update a Feature Flag By Id
-	// (PUT /v1/feature_flag/{id})
-	UpdateFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// (GET /v1/feature_flag/{flagId})
+	GetFeatureFlag(w http.ResponseWriter, r *http.Request, flagId openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -677,21 +670,21 @@ func (_ Unimplemented) CreateFeatureFlag(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Update a Feature Flag
+// (PUT /v1/feature_flag)
+func (_ Unimplemented) UpdateFeatureFlag(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Deletes a Feature Flag By Id
-// (DELETE /v1/feature_flag/{id})
-func (_ Unimplemented) DeleteFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+// (DELETE /v1/feature_flag/{flagId})
+func (_ Unimplemented) DeleteFeatureFlag(w http.ResponseWriter, r *http.Request, flagId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Gets a Feature Flag By Id
-// (GET /v1/feature_flag/{id})
-func (_ Unimplemented) GetFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Update a Feature Flag By Id
-// (PUT /v1/feature_flag/{id})
-func (_ Unimplemented) UpdateFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+// (GET /v1/feature_flag/{flagId})
+func (_ Unimplemented) GetFeatureFlag(w http.ResponseWriter, r *http.Request, flagId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -719,23 +712,38 @@ func (siw *ServerInterfaceWrapper) CreateFeatureFlag(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// UpdateFeatureFlag operation middleware
+func (siw *ServerInterfaceWrapper) UpdateFeatureFlag(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateFeatureFlag(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // DeleteFeatureFlag operation middleware
 func (siw *ServerInterfaceWrapper) DeleteFeatureFlag(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
 
-	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	// ------------- Path parameter "flagId" -------------
+	var flagId openapi_types.UUID
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, chi.URLParam(r, "id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "flagId", runtime.ParamLocationPath, chi.URLParam(r, "flagId"), &flagId)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "flagId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteFeatureFlag(w, r, id)
+		siw.Handler.DeleteFeatureFlag(w, r, flagId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -751,43 +759,17 @@ func (siw *ServerInterfaceWrapper) GetFeatureFlag(w http.ResponseWriter, r *http
 
 	var err error
 
-	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	// ------------- Path parameter "flagId" -------------
+	var flagId openapi_types.UUID
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, chi.URLParam(r, "id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "flagId", runtime.ParamLocationPath, chi.URLParam(r, "flagId"), &flagId)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "flagId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetFeatureFlag(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// UpdateFeatureFlag operation middleware
-func (siw *ServerInterfaceWrapper) UpdateFeatureFlag(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, chi.URLParam(r, "id"), &id)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateFeatureFlag(w, r, id)
+		siw.Handler.GetFeatureFlag(w, r, flagId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -914,13 +896,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/v1/feature_flag", wrapper.CreateFeatureFlag)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/v1/feature_flag/{id}", wrapper.DeleteFeatureFlag)
+		r.Put(options.BaseURL+"/v1/feature_flag", wrapper.UpdateFeatureFlag)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/v1/feature_flag/{id}", wrapper.GetFeatureFlag)
+		r.Delete(options.BaseURL+"/v1/feature_flag/{flagId}", wrapper.DeleteFeatureFlag)
 	})
 	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/v1/feature_flag/{id}", wrapper.UpdateFeatureFlag)
+		r.Get(options.BaseURL+"/v1/feature_flag/{flagId}", wrapper.GetFeatureFlag)
 	})
 
 	return r
@@ -929,19 +911,19 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xWT0/8NhD9KtG0xyhZ9ncoyqkLCLTqAVSEeqhWaEgmiSGxXXu8VYry3Ss7WXazfwCp",
-	"rcrhd4HseOJ5fu/NOK+Qq1YrSZItZK9g85paDI/XhOwMXTdY+Z/aKE2GBYVFiS35/9xpggwsGyEr6GNY",
-	"Y+N2V56Uaggl9H28CamnZ8rZJ++U+E1wvSwOC4kQK5VpkSED50QB8WHZfwNPH4Ol3BnB3b2nYQCwuFv+",
-	"Ql2AIiGDmrAgA5uKgFo8vlC3xYRa+Pw+htuF43oe4Dfqz7AZOq6VEX8hCyUvVUEHwQfT+CrM2mZpaq1K",
-	"bI26oS4RKlU+dZ76vxCDzZUeMJYDj2WDlc0MYQEZLJ5EI7iLWEW/EhbRyHXkybYeHqsX+lS5kDghLMSh",
-	"9yEhS+Uh5Eoy5uwfqUXhd32htZA/b/fzRQuyuRHanxQyuEBL0SXpmkQRLe6W0RWVQoqwGgMLbny5nQSI",
-	"YU3GDm/Pklly5jdVmiRqARl8S2bJN4hBI9eBmXR9lo7sPJYbJysbcE6xXBpCpggnREHY3ARlvDvHrN3W",
-	"iMHQH44sX6ii2zBBMlRArRuRh7fTZ+vLbDrMP/1oqIQMfki3LZiO/ZfuVgg8T8EuovFQkT9UlCtZisoN",
-	"OEdEwlABGRtHvQ9YraQd3DKfzf4LnGMHH0F7rZycGnBoNte2aLp3uGdv1ex3mHp35V/eFzZ9FUU/qNoQ",
-	"06G+VyFu94pEF120LA5kHpKnMms02BKT8ZDGaeB9tp0FYTRNuY93ePxgiPWr4zpNj3Hv8pysLV3TdNEA",
-	"s9gnbkruBwc/xXEMFR1pkxviT3J4Q/w1CPxCRn+PvdNCaHdEiAddHPbMCSmG3P9Dje+T8Z8Z5n2VT87H",
-	"8Clj1htx3eSWz4f7NJnczCeTuDqdmKVpo3JsamU5O5+dzw7Xz+Y/JeGiHtdXb6j3DX27sayN0AReWpRY",
-	"CVntfbu8GXTvk2bV/x0AAP//8lM0b84KAAA=",
+	"H4sIAAAAAAAC/9xWwW7jNhD9FWHaoyA53kMXOtXJIgujhwQNgh4KI5hII4mJRLLk0IUa6N8LUnJsWXaS",
+	"Q1sEvcjycMT3+N4MyRfIVauVJMkWsheweU0thtdrQnaGrhus/F9tlCbDgsKgxJb8L3eaIAPLRsgK+hi2",
+	"2LjDkUelGkIJfR/vQurxiXL2yQcQvwmu18UcSIRYqUyLDBk4JwqI57D/BJ8+Bku5M4K7Oy/DQGB1u/6F",
+	"ukBFQgY1YUEGdoiAWjw8U7fnhFr4/D6Gm5XjehnoN+rPMBk6rpURfyELJa9UQbPgvWk8CrO2WZpaqxJb",
+	"o26oS4RKlU9dpv4JMdhc6YFjOehYNljZzBAWkMHqUTSCu4hV9CthEY1aR15s6+mxeqYPwYXEiWAhDr0P",
+	"CVkqTyFXkjFn/0otCj/rM22F/Hk/nwctyOZGaL9SyOASLUVXpGsSRbS6XUffqBRShNEYWHDj4Q4SIIYt",
+	"GTt8vUgWyYWfVGmSqAVk8CVZJF8gBo1cB2XS7UU6qvNQ7ipZ2cBzyuXKEDJFOBEKwuQmOOOrc8w6bI0Y",
+	"DP3hyPKlKrqdEiQDAmrdiDx8nT5ZD7PrMP/2o6ESMvgh3bdgOvZfeogQdJ6SXUXjoiK/qChXshSVG3iO",
+	"jIShAjI2jnofsFpJO1TLcrH4N3iOHXyC7bVyclqAQ7O5tkXTvaE9+1LNfodp7W76GLQ7YeG9Lj5g4ZD1",
+	"n1p4Xpr/mZHnHDhnZB/POjR98c910Q/+NsQ0d/pbiNsjoOiyi9bFzPAheWq4RoMtMRlPa9za/aax39gH",
+	"FjMP4gM93zmV+s1pv6ZLuXN5TtaWrmm6aKBaHAs4FfmdxZ9vmopONM134g/q+J3484j4iYr+LQXPFn64",
+	"bJjtTjs3OYfz4cRLJmfn2SSuzidmadqoHJtaWc6+Lr4u5uMXy5+ScJSO45tX1selcrMrBxuhCaq0KLES",
+	"sjq6Xbz6f3Tp2PR/BwAA//8+GJ+3cAoAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
