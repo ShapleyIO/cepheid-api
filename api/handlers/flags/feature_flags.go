@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
@@ -35,4 +36,16 @@ func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Write(resp)
+}
+
+func (s *ServiceFeatureFlags) CreateFeatureFlag(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *ServiceFeatureFlags) DeleteFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+
+}
+
+func (s *ServiceFeatureFlags) UpdateFeatureFlag(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+
 }

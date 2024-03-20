@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install --yes --quiet \
     netcat-openbsd unzip \
     && rm -rf /var/lib/apt/lists/*
 
-ENV OAPI_CODEGEN_VERSION 1.13.2
+ENV OAPI_CODEGEN_VERSION 1.16.2
 
 VOLUME $GOPATH/src/github.com/ShapleyIO/$PROJECT
 

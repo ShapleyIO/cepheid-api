@@ -28,20 +28,93 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Found Feature Flag
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FeatureFlag'
+                $ref: '#/components/schemas/FeatureFlagWithId'
+    put:
+      tags:
+        - Feature Flags
+      summary: Update a Feature Flag By Id
+      description: Update a Feature Flag By Id
+      operationId: updateFeatureFlag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: "A feature flag configuration"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureFlag'
+      responses:
+        '200':
+          description: Found Feature Flag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlagWithId'
+    delete:
+      tags:
+        - Feature Flags
+      summary: Deletes a Feature Flag By Id
+      description: Deletes a Feature Flag By Id
+      operationId: deleteFeatureFlag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully Deleted a Feature Flag
       # security:
       #   - OAuth2:
       #     - featureflags:read
+  /feature_flag:
+    post:
+      tags:
+        - Feature Flags
+      summary: Create a Feature Flag
+      description: Create a Feature Flag
+      operationId: createFeatureFlag
+      requestBody:
+        description: "A feature flag configuration"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureFlag'
+      responses:
+        '200':
+          description: Found Feature Flag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlagWithId'
+      
 
 components:
   schemas:
     FeatureFlag:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: boolean
+    FeatureFlagWithId:
       type: object
       properties:
         id:
