@@ -43,5 +43,5 @@ RUN --mount=type=cache,target=/root/.cache/go-build bin/build
 FROM golang:1.22.1 as api
 COPY --from=api-builder /go/src/github.com/ShapleyIO/shapley-cepheid/dist/cepheid-api /usr/bin/cepheid-api
 ENV INTERFACE="[::]"
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT [ "cepheid-api" ]

@@ -33,8 +33,11 @@ func main() {
 		log.Panic().Err(err).Msg("failed to get swagger for api")
 	}
 
+	validatorMiddlerware := chi_middleware.OapiRequestValidatorWithOptions(swaggerApi, &chi_middleware.Options{
+		SilenceServersWarning: true,
+	})
 	swaggerEndpoints := router.Group(nil)
-	swaggerEndpoints.Use(chi_middleware.OapiRequestValidator(swaggerApi))
+	swaggerEndpoints.Use(validatorMiddlerware)
 
 	api.HandlerFromMux(services.Handlers(), swaggerEndpoints)
 
