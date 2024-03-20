@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: builder
-    image: shapley/cepheid-api:${REVISION:-development}
+    image: shapley/builder:${REVISION:-development}
     tty: true
     volumes:
       - .:/go/src/github.com/ShapleyIO/shapley-cepheid

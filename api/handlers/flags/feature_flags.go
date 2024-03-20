@@ -1,9 +1,11 @@
 package flags
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
 )
 
 type ServiceFeatureFlags struct {
@@ -20,6 +22,17 @@ func NewServiceFlags() *ServiceFeatureFlags {
 	}
 }
 
-func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Request, id string) {
+type GetFeatureFlagResponse struct {
+	Flag string
+}
 
+func (s *ServiceFeatureFlags) GetFeatureFlag(w http.ResponseWriter, r *http.Request, id string) {
+	resp, err := json.Marshal(&GetFeatureFlagResponse{
+		Flag: "Hello, World!",
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal response")
+	}
+
+	w.Write(resp)
 }
