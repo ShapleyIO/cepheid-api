@@ -28,16 +28,18 @@ func main() {
 		log.Panic().Err(err).Msg("failed to create services")
 	}
 
+	// Setup Swagger Validator
 	swaggerApi, err := apiV1.GetSwagger()
 	if err != nil {
 		log.Panic().Err(err).Msg("failed to get swagger for api")
 	}
 
-	validatorMiddlerware := chi_middleware.OapiRequestValidatorWithOptions(swaggerApi, &chi_middleware.Options{
+	middlewareOptions := &chi_middleware.Options{
 		SilenceServersWarning: true,
-	})
+	}
 
-	baseRouter.Use(validatorMiddlerware)
+	// Setup Middlewares
+	baseRouter.Use(chi_middleware.OapiRequestValidatorWithOptions(swaggerApi, middlewareOptions))
 
 	apiV1.HandlerFromMux(services.Handlers(), baseRouter)
 
