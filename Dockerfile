@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install --yes --quiet \
     && rm -rf /var/lib/apt/lists/*
 
 ENV OAPI_CODEGEN_VERSION 1.16.2
+ENV MOCKGEN_VERSION v1.6.0
 
 VOLUME $GOPATH/src/github.com/ShapleyIO/$PROJECT
 
@@ -25,11 +26,9 @@ VOLUME $GOPATH/src/github.com/ShapleyIO/$PROJECT
 COPY go.mod ./go.mod
 COPY go.sum ./go.sum
 COPY vendor vendor
-COPY tools.go ./tools.go
-# COPY bin/configure bin/configure
-# RUN chmod 775 bin/configure
-# RUN bin/configure
+
 RUN GOFLAGS='' go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v${OAPI_CODEGEN_VERSION}
+RUN GOFLAGS='' go install github.com/golang/mock/mockgen@${MOCKGEN_VERSION}
 
 FROM base as golang-builder
 ARG BUILD_DATE

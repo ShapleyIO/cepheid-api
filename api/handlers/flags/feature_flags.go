@@ -18,14 +18,10 @@ type ServiceFeatureFlags struct {
 	redisClient *redis.Client
 }
 
-func NewServiceFlags() *ServiceFeatureFlags {
+func NewServiceFlags(redisClient *redis.Client) *ServiceFeatureFlags {
 	return &ServiceFeatureFlags{
-		ctx: context.Background(),
-		redisClient: redis.NewClient(&redis.Options{
-			Addr:     "redis:6379",
-			Password: "", // no password set
-			DB:       0,  // use default DB
-		}),
+		ctx:         context.Background(),
+		redisClient: redisClient,
 	}
 }
 
