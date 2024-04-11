@@ -1,0 +1,20 @@
+# deployment.yaml for cepheid-api
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cepheid-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cepheid-api
+  template:
+    metadata:
+      labels:
+        app: cepheid-api
+    spec:
+      containers:
+      - name: cepheid-api
+        image: shapley/cepheid-api:latest
+        ports:
+        - containerPort: 8080
