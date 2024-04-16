@@ -3,9 +3,9 @@ package api
 import (
 	"fmt"
 
-	"github.com/ShapleyIO/cepheid/api/handlers/flags"
-	v1 "github.com/ShapleyIO/cepheid/api/v1"
-	"github.com/ShapleyIO/cepheid/internal/config"
+	"github.com/ShapleyIO/cepheid-api/api/handlers/flags"
+	v1 "github.com/ShapleyIO/cepheid-api/api/v1"
+	"github.com/ShapleyIO/cepheid-api/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 

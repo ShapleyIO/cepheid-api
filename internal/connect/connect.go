@@ -3,8 +3,8 @@ package connect
 import (
 	"strings"
 
-	"github.com/ShapleyIO/cepheid/api"
-	"github.com/ShapleyIO/cepheid/internal/config"
+	"github.com/ShapleyIO/cepheid-api/api"
+	"github.com/ShapleyIO/cepheid-api/internal/config"
 )
 
 type Services struct {

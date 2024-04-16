@@ -1,4 +1,4 @@
-module github.com/ShapleyIO/cepheid
+module github.com/ShapleyIO/cepheid-api
 
 go 1.22.1
 

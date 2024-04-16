@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	apiV1 "github.com/ShapleyIO/cepheid/api/v1"
+	apiV1 "github.com/ShapleyIO/cepheid-api/api/v1"
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/redis/go-redis/v9"

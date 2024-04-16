@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/ShapleyIO/cepheid/api/handlers/flags"
-	apiV1 "github.com/ShapleyIO/cepheid/api/v1"
-	"github.com/ShapleyIO/cepheid/internal/config"
+	"github.com/ShapleyIO/cepheid-api/api/handlers/flags"
+	apiV1 "github.com/ShapleyIO/cepheid-api/api/v1"
+	"github.com/ShapleyIO/cepheid-api/internal/config"
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	. "github.com/onsi/ginkgo"

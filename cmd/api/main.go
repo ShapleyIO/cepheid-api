@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 
-	apiV1 "github.com/ShapleyIO/cepheid/api/v1"
-	"github.com/ShapleyIO/cepheid/internal/config"
-	"github.com/ShapleyIO/cepheid/internal/connect"
+	apiV1 "github.com/ShapleyIO/cepheid-api/api/v1"
+	"github.com/ShapleyIO/cepheid-api/internal/config"
+	"github.com/ShapleyIO/cepheid-api/internal/connect"
 	"github.com/go-chi/chi/v5"
 	chi_middleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/rs/zerolog"
